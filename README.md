@@ -1,13 +1,7 @@
-# Sample Hardhat Project
+# Hyro smart contracts
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+This repo contains the scripts used in the Hyro protocol. This project has been created for the ETHCC 2022 hackaton in Paris.
 
-Try running some of the following tasks:
+## Please check the doc for more infos
 
-```shell
-npx hardhat help
-npx hardhat test
-GAS_REPORT=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.js
-```
+https://victor-37.gitbook.io/hyro/
