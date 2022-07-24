@@ -5,7 +5,7 @@ interface IHyroFactory {
 
     function feeTo() external view returns (address);
     function feeToSetter() external view returns (address);
-    function whitelistedTokens() external view returns (address[] calldata);
+    function getWhitelistedTokens() external view returns (address[] calldata);
 
     function getPair(address tokenA, address tokenB) external view returns (address pair);
     function allPairs(uint) external view returns (address pair);

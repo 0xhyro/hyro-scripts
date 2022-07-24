@@ -17,17 +17,14 @@ contract Hyro is HyroERC20 {
     bytes4 private constant SELECTOR = bytes4(keccak256(bytes('transfer(address,uint256)')));
     bytes4 private constant FROMSELECTOR = bytes4(keccak256(bytes('transferFrom(address,address,uint256)')));
     uint256 private constant MAX_UINT = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-    address private UNISWAP_ROUTER = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
+    address private UNISWAP_ROUTER = 0x6ae0B2c523183C8490dd18A4E05696119a2fE99d;
  
     address public factory;
     address public hyro;
     address[] private tokens;
     mapping(address => uint256) private reserves;
 
-    uint32  private blockTimestampLast; // uses single storage slot, accessible via getReserves
-
-    uint public price0CumulativeLast;
-    uint public price1CumulativeLast;
+    uint32  private blockTimestampLast;
 
     uint private unlocked = 1;
     modifier lock() {
@@ -39,18 +36,18 @@ contract Hyro is HyroERC20 {
 
     
 
-    function updateTokens() private {
-        tokens = IHyroFactory(factory).whitelistedTokens();
+    function updateTokens() public {
+        tokens = IHyroFactory(factory).getWhitelistedTokens();
     }
 
     function _safeTransfer(address token, address to, uint value) private {
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(SELECTOR, to, value));
-        require(success && (data.length == 0 || abi.decode(data, (bool))), 'Hyo: TRANSFER_FAILED');
+        require(success && (data.length == 0 || abi.decode(data, (bool))), 'Hyro: TRANSFER_FAILED');
     }
 
     function _safeTransferFrom(address token, address from, address to, uint value) private {
-        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(FROMSELECTOR, to, value));
-        require(success && (data.length == 0 || abi.decode(data, (bool))), 'Hyo: TRANSFER_FAILED');
+        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(FROMSELECTOR, from, to, value));
+        require(success && (data.length == 0 || abi.decode(data, (bool))), 'Hyro: TRANSFER_FROM_FAILED');
     }
 
     event Mint(address indexed sender, uint liquidity, uint amountDeposit);
@@ -68,9 +65,8 @@ contract Hyro is HyroERC20 {
         factory = msg.sender;
     }
 
-    // called once by the factory at time of deployment
     function initialize(address _hyro) external {
-        require(msg.sender == factory, 'Hyro: FORBIDDEN'); // sufficient check
+        require(msg.sender == factory, 'Hyro: FORBIDDEN');
         hyro = _hyro;
         updateTokens();
     }
@@ -91,15 +87,9 @@ contract Hyro is HyroERC20 {
     function getTokens() public view returns (address[] memory _tokens) {
         _tokens = tokens;
     }
-    // update reserves and, on the first call per block, price accumulators
+
     function _update(uint _balance0, uint _balance1, address _token0, address _token1) private {
         uint32 blockTimestamp = uint32(block.timestamp % 2**32);
-        uint32 timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
-      /*  if (timeElapsed > 0 && reserves[_token0] != 0 && reserves[_token1] != 0) {
-            // * never overflows, and + overflow is desired
-            price0CumulativeLast += uint(UQ112x112.encode(reserves[_token1]).uqdiv(reserves[_token0])) * timeElapsed;
-            price1CumulativeLast += uint(UQ112x112.encode(reserves[_token0]).uqdiv(reserves[_token1])) * timeElapsed;
-        }*/
         reserves[_token0] = uint112(_balance0);
         reserves[_token1] = uint112(_balance1);
         blockTimestampLast = blockTimestamp;
@@ -107,24 +97,27 @@ contract Hyro is HyroERC20 {
     }
 
     function mint(address to, uint256 _amount, address[][] memory paths) external lock returns (uint liquidity) {
-        uint[] memory balances = new uint[](tokens.length);
         uint256 totAmounts = 0;
-        _safeTransferFrom(tokens[0], msg.sender, address(this), _amount);
-        for (uint i; i < tokens.length; i++) {
-            balances[i] = IERC20(tokens[i]).balanceOf(address(this));
-            totAmounts += IRouterV2(UNISWAP_ROUTER).getAmountsOut(balances[i], paths[i])[1];// ChainLink with 1Inch api;
+        
+        IERC20(tokens[0]).transferFrom(msg.sender, address(this), _amount);
+        
+        for (uint i = 0; i < tokens.length; i++) {
+            if (tokens[i] != tokens[0]) {
+                uint[] memory amountsOut = IRouterV2(UNISWAP_ROUTER).getAmountsOut(IERC20(tokens[i]).balanceOf(address(this)), paths[i]);
+                totAmounts += amountsOut[1];
+            } else {
+                totAmounts = IERC20(tokens[i]).balanceOf(address(this));
+            }
         }
-        uint256 amount = totAmounts.sub(_amount);
-
-    //    bool feeOn = _mintFee(_reserve0, _reserve1);
-        uint _totalSupply = totalSupply; // gas savings, must be defined here since totalSupply can update in _mintFee
+        uint256 amount = _amount;
+        
+        uint _totalSupply = totalSupply;
         if (_totalSupply == 0) {
-
-            liquidity = amount - MINIMUM_LIQUIDITY;
-           _mint(address(0), MINIMUM_LIQUIDITY); // permanently lock the first MINIMUM_LIQUIDITY tokens
+            
+            liquidity = Math.sqrt(amount) - MINIMUM_LIQUIDITY;
+           _mint(address(0), MINIMUM_LIQUIDITY);
         } else {
-            uint percent = amount.mul(100) / totAmounts;
-            liquidity = percent.mul(_totalSupply) / (100);
+            liquidity = amount.mul(_totalSupply) / (totAmounts - amount);
         }
         require(liquidity > 0, 'Hyro: INSUFFICIENT_LIQUIDITY_MINTED');
         _mint(to, liquidity);
@@ -132,28 +125,34 @@ contract Hyro is HyroERC20 {
         emit Mint(msg.sender, liquidity, _amount);
     }
 
-    function burn(address to, uint256 _amount, address[][] memory paths) external lock returns (uint amount0, uint amount1) {
+    function burn(address to, uint256 _amount, address[][] memory paths) external lock {
         
-        uint[] memory balances = new uint[](tokens.length);
         uint256 totAmounts;
         for (uint i; i < tokens.length; i++) {
-            balances[i] = IERC20(tokens[i]).balanceOf(address(this));
-            totAmounts += IRouterV2(UNISWAP_ROUTER).getAmountsOut(balances[i], paths[i])[1];
+            if (tokens[i] != tokens[0]) {
+                uint[] memory amountsOut = IRouterV2(UNISWAP_ROUTER).getAmountsOut(IERC20(tokens[i]).balanceOf(address(this)), paths[i]);
+                totAmounts += amountsOut[1];
+            } else {
+                totAmounts = IERC20(tokens[i]).balanceOf(address(this));
+            }
         }
-
-        _safeTransferFrom(address(this), address(this), msg.sender, _amount);
+        IERC20(address(this)).transferFrom(msg.sender, address(this), _amount);
         uint liquidity = balanceOf[address(this)];
-
-        //bool feeOn = _mintFee(_reserve0, _reserve1);
-        uint _totalSupply = totalSupply; // gas savings, must be defined here since totalSupply can update in _mintFee
-        uint percent = liquidity.mul(100) / _totalSupply;
-        uint256 amount = percent.mul(totAmounts) / (100); // using balances ensures pro-rata distribution
+    
+        uint _totalSupply = totalSupply; 
+        uint percent = liquidity.mul(1000000000000000000) / _totalSupply;
+        uint256 amount = percent.mul(totAmounts) / (1000000000000000000); 
         require(amount > 0, 'Hyro: INSUFFICIENT_LIQUIDITY_BURNED');
         _burn(address(this), liquidity);
-        for (uint256 i; i < tokens.length; i++) {
+        for (uint256 i; i < tokens.length; i++) { 
             if (reserves[tokens[i]] > 0) {
-                uint256 ownedAmount = percent.mul(balances[i]) / (100);
-                IRouterV2(UNISWAP_ROUTER).swapExactTokensForTokens(ownedAmount, 0, paths[i], address(this), block.timestamp + 1000);
+                uint256 withdrawAmount = percent.mul(IERC20(tokens[i]).balanceOf(address(this))) / (1000000000000000000);
+                if (tokens[i] != tokens[0]) {
+                    if (IERC20(tokens[i]).allowance(UNISWAP_ROUTER, address(this)) < withdrawAmount) {
+                        IERC20(tokens[i]).approve(UNISWAP_ROUTER, withdrawAmount);
+                    }
+                    IRouterV2(UNISWAP_ROUTER).swapExactTokensForTokens(withdrawAmount, 0, paths[i], address(this), block.timestamp + 1000);
+                }
                 reserves[tokens[i]] = IERC20(tokens[i]).balanceOf(address(this));
             }
         }
@@ -164,8 +163,9 @@ contract Hyro is HyroERC20 {
 
     function swap(uint amountIn, uint minAmountOut, address tokenIn, address tokenOut, address[] memory path, uint256 slippage) external lock returns (uint256) {
         updateTokens();
-        approveToken(tokenIn, UNISWAP_ROUTER);
-        require (whitelisted(tokenIn) == true && whitelisted(tokenIn) == true, "Hyro: Only use Withlisted Token");
+        require (whitelisted(tokenIn) == true && whitelisted(tokenOut) == true, "Hyro: Only use Withlisted Token");
+        if (IERC20(tokenIn).allowance(UNISWAP_ROUTER, address(this)) < amountIn)
+            approveToken(tokenIn, UNISWAP_ROUTER);
         IRouterV2(UNISWAP_ROUTER).swapExactTokensForTokens(amountIn, minAmountOut, path, address(this), block.timestamp + 1000);
         _update(IERC20(tokenIn).balanceOf(address(this)), IERC20(tokenOut).balanceOf(address(this)), tokenIn, tokenOut);
     }

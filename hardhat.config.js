@@ -1,98 +1,62 @@
 require("@nomiclabs/hardhat-waffle");
-require("@nomiclabs/hardhat-ethers");
-require("@nomiclabs/hardhat-etherscan");
-const { ALL_CHAINS } = require("@pangolindex/sdk");
-require('dotenv').config();
-
-// Create hardhat networks from @pangolindex/sdk
-let networksFromSdk = {};
-for(let i = 0; i < ALL_CHAINS.length; i++) {
-  networksFromSdk[ALL_CHAINS[i].id] = {
-    url: ALL_CHAINS[i].rpc_uri,
-    chainId: ALL_CHAINS[i].chain_id,
-    accounts: [process.env.PRIVATE_KEY]
-  };
-};
-networksFromSdk["hardhat"] = {
-  chainId: 43112,
-  initialDate: "2021-10-10",
-}
-
-// This is a sample Hardhat task. To learn how to create your own go to
-// https://hardhat.org/guides/create-task.html
-task("accounts", "Prints the list of accounts", async () => {
-  const accounts = await ethers.getSigners();
-
-  for (const account of accounts) {
-    console.log(account.address);
-  }
-});
-
-/**
- * @type import('hardhat/config').HardhatUserConfig
- */
+require('hardhat-abi-exporter');
+// gasPrice to add
 module.exports = {
-  solidity: {
-    compilers: [
-      {
-        version: "0.4.16"
-      },
-      {
-        version: "0.5.16",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 1000
-          }
-        }
-      },
-      {
-        version: "0.8.15",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 1000
-          }
-        }
-      },
-    ],
-  },
-  networks: networksFromSdk,
-  etherscan: {
-    apiKey: {
-        mainnet: process.env.ETHERSCAN_API_KEY,
-        ropsten: process.env.ETHERSCAN_API_KEY,
-        rinkeby: process.env.ETHERSCAN_API_KEY,
-        goerli: process.env.ETHERSCAN_API_KEY,
-        kovan: process.env.ETHERSCAN_API_KEY,
-        // binance smart chain
-        bsc: process.env.BSCSCAN_API_KEY,
-        bscTestnet: process.env.BSCSCAN_API_KEY,
-        // huobi eco chain
-        heco: process.env.HECOINFO_API_KEY,
-        hecoTestnet: process.env.HECOINFO_API_KEY,
-        // fantom mainnet
-        opera: process.env.FTMSCAN_API_KEY,
-        ftmTestnet: process.env.FTMSCAN_API_KEY,
-        // optimism
-        optimisticEthereum: process.env.OPTIMISTIC_ETHERSCAN_API_KEY,
-        optimisticKovan: process.env.OPTIMISTIC_ETHERSCAN_API_KEY,
-        // polygon
-        polygon: process.env.POLYGONSCAN_API_KEY,
-        polygonMumbai: process.env.POLYGONSCAN_API_KEY,
-        // arbitrum
-        arbitrumOne: process.env.ARBISCAN_API_KEY,
-        arbitrumTestnet: process.env.ARBISCAN_API_KEY,
-        // avalanche
-        avalanche: process.env.SNOWTRACE_API_KEY,
-        avalancheFujiTestnet: process.env.SNOWTRACE_API_KEY,
-        // moonbeam
-        moonriver: process.env.MOONRIVER_MOONSCAN_API_KEY,
-        moonbaseAlpha: process.env.MOONBEAM_MOONSCAN_API_KEY,
-        // xdai and sokol don't need an API key, but you still need
-        // to specify one; any string placeholder will work
-        xdai: "api-key",
-        sokol: "api-key",
-    }
-  }
+	solidity: {
+		compilers: [
+			{
+				version: "0.8.15",
+				settings: {
+					optimizer: {
+						enabled: true,
+						runs: 200,
+					},
+				},
+			},
+			{
+				version: "0.4.15",
+			},
+		],
+	},
+	abiExporter: {
+		path: './data/abi',
+		runOnCompile: true,
+	},
+	networks: {
+		hardhat : {
+			forking: {
+				url: "https://polygon-rpc.com/",
+				chainId: 137,
+				accounts: [""]
+			},
+		},
+		avalanche : {
+			url: "https://api.avax.network/ext/bc/C/rpc",
+			chainId: 43114,
+			accounts: ["0x86fcd764645c0627faed16712708a24eff93d92e5084abec9a47e09864634f0e"]
+		},
+		avalanche_testnet : {
+			url: "https://api.avax-test.network/ext/bc/C/rpc",
+			chainId: 43113,
+			accounts: ["0x86fcd764645c0627faed16712708a24eff93d92e5084abec9a47e09864634f0e"]
+		},
+		fantom_testnet : {
+			url: "https://rpc.testnet.fantom.network/",
+			chainId: 4002,
+			accounts: ["0x52a84915e7d47df3b2f84a18115501da0e737f06a5d3e35d25999225e9eb5df4", "0xb94612db55a68abc930de2ebe58b1238551b549f142055985b94203c94522afd",
+			"0x619706933f3233f519b2f97f1100ebc046ad834fc8a5b730d07fdeca5a33a746", "0xed9db422b5eaac37522e3df4f72bbe565a0fb7089fec0bf1a31580d1f06f0132",
+			"0x78b515c3598940ba29faa826b5ffa1bd6a84f4f6f99e6ad9c6b08bd111e49790", "0x23a2d05918a8d08177750b8f03171a5336e015253b33b8ebe9a8b7e9ed6efce3",
+			"0x02679ad9d43f02f26f00061a16fba9d7727cdb5d6dffbdabec8e588e993f9479", "0xbe77a83741cfc10a5f11a344c15643d9de2e1e9902438ed240678a1c2bc3b61b",
+			"0x5ac01db773787a68f638e9a316db93698494fdbda1c37a3de6c0c49d58cb0d6e", "0x026a166ed0c8552463c9642b1f3f3d1bcc3d365ad6cfb29a81210406cfe3f088"]
+		},
+		fantom: {
+			url: "https://rpc.ftm.tools/",
+			chainId: 250,
+			accounts: ["0x52a84915e7d47df3b2f84a18115501da0e737f06a5d3e35d25999225e9eb5df4", "0xb94612db55a68abc930de2ebe58b1238551b549f142055985b94203c94522afd",
+			"0x619706933f3233f519b2f97f1100ebc046ad834fc8a5b730d07fdeca5a33a746", "0xed9db422b5eaac37522e3df4f72bbe565a0fb7089fec0bf1a31580d1f06f0132",
+			"0x78b515c3598940ba29faa826b5ffa1bd6a84f4f6f99e6ad9c6b08bd111e49790", "0x23a2d05918a8d08177750b8f03171a5336e015253b33b8ebe9a8b7e9ed6efce3",
+			"0x02679ad9d43f02f26f00061a16fba9d7727cdb5d6dffbdabec8e588e993f9479", "0xbe77a83741cfc10a5f11a344c15643d9de2e1e9902438ed240678a1c2bc3b61b",
+			"0x5ac01db773787a68f638e9a316db93698494fdbda1c37a3de6c0c49d58cb0d6e", "0x026a166ed0c8552463c9642b1f3f3d1bcc3d365ad6cfb29a81210406cfe3f088"]
+		},
+	},
 };

@@ -10,11 +10,10 @@ async function main() {
       }
  
     const [admin] = await ethers.getSigners();
-    const HyroFactory = await attach("HyroFactory", "0xD119ab5e7da0C0eE944122188C7b36CA4a71e3db");
-    await HyroFactory.estimateGas.createHyro(admin.address)
+    const HyroFactory = await attach("HyroFactory", "0x0677591DD9d1A85e6596Bf2ee9c36B4A3fF8AaF4");
+    await HyroFactory.createHyro(admin.address, {gasLimit: 4000000});
+    console.log(await HyroFactory.getHyro(admin.address));
 
-
-  console.log("deployed", hyrofactory.address)
 }
 
 // We recommend this pattern to be able to use async/await everywhere

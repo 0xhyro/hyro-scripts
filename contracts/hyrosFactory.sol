@@ -19,6 +19,10 @@ contract HyroFactory {
         feeTo = _feeTo;
     }
 
+    function getWhitelistedTokens() public view returns (address[] memory _whitelistedTokens) {
+        _whitelistedTokens = whitelistedTokens;
+    }
+
     function addWhitelistedTokens(address[] memory _tokens) public  {
         for (uint256 i; i < _tokens.length; i++) {
             whitelistedTokens.push(_tokens[i]);
