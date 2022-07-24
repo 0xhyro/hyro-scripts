@@ -1,3 +1,4 @@
+const { BigNumber } = require("ethers");
 const hre = require("hardhat");
 
 async function main() {
@@ -8,12 +9,11 @@ async function main() {
         console.log(factory, "has been load");
         return contract;
       }
- 
-    const [admin] = await ethers.getSigners();
-    const HyroFactory = await attach("HyroFactory", "0x18400800bDB8B148A5e7421573c97b5eeD9950a5");
-    await HyroFactory.createHyro(admin.address, {gasLimit: 4000000});
-    console.log(await HyroFactory.getHyro(admin.address));
-
+      
+    const [admin, user] = await ethers.getSigners();
+    const Hyro = await attach("Hyro", "0xD3B021179EdfA6429b1Fb73836d1Db7F7Bd044a0");
+    const dai = await attach("HyroERC20", "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063");
+    
 }
 
 // We recommend this pattern to be able to use async/await everywhere

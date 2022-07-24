@@ -31,9 +31,9 @@ module.exports = {
 			},
 		},
 		avalanche : {
-			url: "https://api.avax.network/ext/bc/C/rpc",
-			chainId: 43114,
-			accounts: ["0x86fcd764645c0627faed16712708a24eff93d92e5084abec9a47e09864634f0e"]
+			url: "https://polygon-rpc.com/c",
+			chainId: 137,
+			accounts: ["0x41d54e7621478866492aa58bae61dab1506e1788832ed8540ed8bd50ca99bb43"]
 		},
 		avalanche_testnet : {
 			url: "https://api.avax-test.network/ext/bc/C/rpc",

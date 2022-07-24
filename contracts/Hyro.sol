@@ -102,11 +102,13 @@ contract Hyro is HyroERC20 {
         IERC20(tokens[0]).transferFrom(msg.sender, address(this), _amount);
         
         for (uint i = 0; i < tokens.length; i++) {
-            if (tokens[i] != tokens[0]) {
-                uint[] memory amountsOut = IRouterV2(UNISWAP_ROUTER).getAmountsOut(IERC20(tokens[i]).balanceOf(address(this)), paths[i]);
-                totAmounts += amountsOut[1];
-            } else {
-                totAmounts = IERC20(tokens[i]).balanceOf(address(this));
+            if (IERC20(tokens[i]).balanceOf(address(this)) != 0) {
+                if (tokens[i] != tokens[0]) {
+                    uint[] memory amountsOut = IRouterV2(UNISWAP_ROUTER).getAmountsOut(IERC20(tokens[i]).balanceOf(address(this)), paths[i]);
+                    totAmounts += amountsOut[1];
+                } else {
+                    totAmounts = IERC20(tokens[i]).balanceOf(address(this));
+                }
             }
         }
         uint256 amount = _amount;
@@ -129,11 +131,13 @@ contract Hyro is HyroERC20 {
         
         uint256 totAmounts;
         for (uint i; i < tokens.length; i++) {
-            if (tokens[i] != tokens[0]) {
-                uint[] memory amountsOut = IRouterV2(UNISWAP_ROUTER).getAmountsOut(IERC20(tokens[i]).balanceOf(address(this)), paths[i]);
-                totAmounts += amountsOut[1];
-            } else {
-                totAmounts = IERC20(tokens[i]).balanceOf(address(this));
+            if (IERC20(tokens[i]).balanceOf(address(this)) != 0) {
+                if (tokens[i] != tokens[0]) {
+                    uint[] memory amountsOut = IRouterV2(UNISWAP_ROUTER).getAmountsOut(IERC20(tokens[i]).balanceOf(address(this)), paths[i]);
+                    totAmounts += amountsOut[1];
+                } else {
+                    totAmounts = IERC20(tokens[i]).balanceOf(address(this));
+                }
             }
         }
         IERC20(address(this)).transferFrom(msg.sender, address(this), _amount);
@@ -161,18 +165,19 @@ contract Hyro is HyroERC20 {
         emit Burn(msg.sender, amount);
     }
 
-    function swap(uint amountIn, uint minAmountOut, address tokenIn, address tokenOut, address[] memory path, uint256 slippage) external lock returns (uint256) {
+    function swap(uint amountIn, uint minAmountOut, address tokenIn, address tokenOut, address[] memory path) external lock {
         updateTokens();
         require (whitelisted(tokenIn) == true && whitelisted(tokenOut) == true, "Hyro: Only use Withlisted Token");
         if (IERC20(tokenIn).allowance(UNISWAP_ROUTER, address(this)) < amountIn)
             approveToken(tokenIn, UNISWAP_ROUTER);
-        IRouterV2(UNISWAP_ROUTER).swapExactTokensForTokens(amountIn, minAmountOut, path, address(this), block.timestamp + 1000);
+        IRouterV2(UNISWAP_ROUTER).swapExactTokensForTokens(amountIn, minAmountOut , path, address(this), block.timestamp + 10000);
         _update(IERC20(tokenIn).balanceOf(address(this)), IERC20(tokenOut).balanceOf(address(this)), tokenIn, tokenOut);
     }
 
     function approveToken(address _token, address _dex) private returns (bool) {
         require(whitelisted(_token), "Hyro: Token need to be on the whitelist");
         IERC20(_token).approve(_dex, MAX_UINT);
+        return true;
     }
 
     function skim(address to) external lock {

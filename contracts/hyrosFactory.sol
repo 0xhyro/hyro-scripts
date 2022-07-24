@@ -4,19 +4,27 @@ pragma solidity =0.8.15;
 import './interfaces/IHyroFactory.sol';
 import './Hyro.sol';
 
+interface IHuman {
+       function humans(address wallet) external view returns(bool); 
+}
+
 contract HyroFactory {
+
+    
     address public feeTo;
     address public owner;
 
     mapping(address => address) public getHyro;
     address[] public allHyros;
     address[] public whitelistedTokens;
+    address private humanVerification;
 
     event HyroCreated(address hyroContract, address hyro, uint);
 
-    constructor(address _owner, address _feeTo) {
+    constructor(address _owner, address _feeTo, address _humanVerification) {
         owner = _owner;
         feeTo = _feeTo;
+        humanVerification = _humanVerification;
     }
 
     function getWhitelistedTokens() public view returns (address[] memory _whitelistedTokens) {
@@ -35,8 +43,8 @@ contract HyroFactory {
 
     function createHyro(address hyro) external returns (address hyroContract) {
         require(hyro != address(0), 'Hyro: ZERO_ADDRESS');
-        require(getHyro[hyro] == address(0), 'Hyro: HYRO_EXISTS'); // single check is sufficient
-       // require(isHuman(hyro) == true);
+        require(getHyro[hyro] == address(0), 'Hyro: HYRO_EXISTS');
+    //    require(IHuman(humanVerification).humans(hyro) == true, "Hyro: YOU ARE NOT A HUMAN");
         bytes memory bytecode = type(Hyro).creationCode;
         bytes32 salt = keccak256(abi.encodePacked(hyro));
         assembly {

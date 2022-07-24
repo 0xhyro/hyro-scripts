@@ -21,62 +21,62 @@ async function main() {
   console.log(path)
 
   const HyroFactory = await hre.ethers.getContractFactory("HyroFactory");
-  hyrofactory = await HyroFactory.deploy(admin.address, admin.address);
+  hyrofactory = await HyroFactory.deploy(admin.address, admin.address, "0x60380F4Ca9A744f1Cd1614856bf0612360E4E1cF");
   console.log("deployed", hyrofactory.address);
-  await hyrofactory.addWhitelistedTokens(["0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063"]);
+  /*await hyrofactory.addWhitelistedTokens(["0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063", "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619"]);
+  console.log("whitelist dai")
+
+
   console.log("whitelist dai")
   console.log(await hyrofactory.whitelistedTokens(0))
 
   await hyrofactory.createHyro(admin.address, {gasLimit: 4000000});
   console.log(await hyrofactory.getHyro(admin.address));
-
+  
   const Hyro = await attach("Hyro", await hyrofactory.getHyro(admin.address));
   const dai = await attach("HyroERC20", "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063");
+  const weth = await attach("HyroERC20", "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619");
+
   await dai.connect(user).approve(Hyro.address, "1000000000000000000000000000000");
   console.log("user:", user.address, "Approve", Hyro.address);
-  await Hyro.connect(user).mint(user.address, BigNumber.from("1000000000000000000"), path, {gasLimit: 4000000});
+  await Hyro.connect(user).mint(user.address, BigNumber.from("100000000000000000000"), path, {gasLimit: 4000000});
   console.log("user:", user.address, "mint", await Hyro.balanceOf(user.address));
+
+  await dai.connect(user1).approve(Hyro.address, "1000000000000000000000000000000");
+  console.log("user:", user1.address, "Approve", Hyro.address);
+  await Hyro.connect(user1).mint(user1.address, BigNumber.from("100000000000000000000"), path, {gasLimit: 4000000});
+  console.log("user:", user1.address, "mint", await Hyro.balanceOf(user1.address));
+
+  await dai.connect(user2).approve(Hyro.address, "1000000000000000000000000000000");
+  console.log("user:", user2.address, "Approve", Hyro.address);
+  await Hyro.connect(user2).mint(user2.address, BigNumber.from("100000000000000000000"), path, {gasLimit: 4000000});
+  console.log("user:", user2.address, "mint", await Hyro.balanceOf(user2.address));
+
+  await dai.connect(user3).approve(Hyro.address, "1000000000000000000000000000000");
+  console.log("user:", user3.address, "Approve", Hyro.address);
+  await Hyro.connect(user3).mint(user3.address, BigNumber.from("200000000000000000000"), path, {gasLimit: 4000000});
+  console.log("user:", user3.address, "mint", await Hyro.balanceOf(user3.address));
+
+  console.log(await dai.balanceOf(Hyro.address));
+
+  let startBalance = await dai.balanceOf(user.address);
+  console.log('TotalLiq', await Hyro.totalSupply())
+  console.log("Liquidity", await Hyro.balanceOf(user1.address));
+  await Hyro.connect(user1).approve(Hyro.address, "1000000000000000000000000000000");
+  await Hyro.connect(user1).burn(user1.address, await Hyro.balanceOf(user1.address), path, {gasLimit: 4000000});
+  console.log("user:", user1.address, "withdraw", await dai.balanceOf(user1.address) - startBalance);
+  console.log("Liquidity", await Hyro.balanceOf(user1.address));
+  console.log('TotalLiq', await Hyro.totalSupply())
 
   await dai.connect(user1).approve(Hyro.address, "1000000000000000000000000000000");
   console.log("user:", user1.address, "Approve", Hyro.address);
   await Hyro.connect(user1).mint(user1.address, BigNumber.from("10000000000000000000"), path, {gasLimit: 4000000});
   console.log("user:", user1.address, "mint", await Hyro.balanceOf(user1.address));
 
-  await dai.connect(user2).approve(Hyro.address, "1000000000000000000000000000000");
-  console.log("user:", user2.address, "Approve", Hyro.address);
-  await Hyro.connect(user2).mint(user2.address, BigNumber.from("1000000000000000000"), path, {gasLimit: 4000000});
-  console.log("user:", user2.address, "mint", await Hyro.balanceOf(user2.address));
-
-  await dai.connect(user3).approve(Hyro.address, "1000000000000000000000000000000");
-  console.log("user:", user3.address, "Approve", Hyro.address);
-  await Hyro.connect(user3).mint(user3.address, BigNumber.from("1000000000000000000"), path, {gasLimit: 4000000});
-  console.log("user:", user3.address, "mint", await Hyro.balanceOf(user3.address));
-
   console.log(await dai.balanceOf(Hyro.address));
 
-  let startBalance = await dai.balanceOf(user.address);
-  console.log("Liquidity", await Hyro.balanceOf(user1.address));
-  await Hyro.connect(user1).approve(Hyro.address, "1000000000000000000000000000000");
-  await Hyro.connect(user1).burn(user1.address, await Hyro.balanceOf(user1.address), path, {gasLimit: 4000000});
-  console.log("user:", user1.address, "withdraw", await dai.balanceOf(user1.address) - startBalance);
-  console.log("Liquidity", await Hyro.balanceOf(user1.address));
-
-  await dai.connect(user1).approve(Hyro.address, "1000000000000000000000000000000");
-  console.log("user:", user1.address, "Approve", Hyro.address);
-  await Hyro.connect(user1).mint(user1.address, BigNumber.from("1000000000000000000"), path, {gasLimit: 4000000});
-  console.log("user:", user1.address, "mint", await Hyro.balanceOf(user1.address));
-
-  console.log(await dai.balanceOf(Hyro.address));
-
-  startBalance = await dai.balanceOf(user.address);
-  console.log("Liquidity", await Hyro.balanceOf(user1.address));
-  await Hyro.connect(user1).approve(Hyro.address, "1000000000000000000000000000000");
-  await Hyro.connect(user1).burn(user1.address, await Hyro.balanceOf(user1.address), path, {gasLimit: 4000000});
-  console.log("user:", user1.address, "withdraw", await dai.balanceOf(user1.address) - startBalance);
-  console.log("Liquidity", await Hyro.balanceOf(user1.address));
-
-  console.log(await dai.balanceOf(Hyro.address));
-
+  await Hyro.connect(admin).swap("4100000000000000000", 10, dai.address, weth.address, [dai.address, weth.address])
+*/
 }
 
 // We recommend this pattern to be able to use async/await everywhere
