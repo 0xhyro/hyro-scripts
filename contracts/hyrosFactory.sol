@@ -44,7 +44,7 @@ contract HyroFactory {
     function createHyro(address hyro) external returns (address hyroContract) {
         require(hyro != address(0), 'Hyro: ZERO_ADDRESS');
         require(getHyro[hyro] == address(0), 'Hyro: HYRO_EXISTS');
-    //    require(IHuman(humanVerification).humans(hyro) == true, "Hyro: YOU ARE NOT A HUMAN");
+        require(IHuman(humanVerification).humans(hyro) == true, "Hyro: YOU ARE NOT A HUMAN");
         bytes memory bytecode = type(Hyro).creationCode;
         bytes32 salt = keccak256(abi.encodePacked(hyro));
         assembly {
